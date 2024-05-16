@@ -1,0 +1,59 @@
+# Node modules directory
+node_modules/
+
+# Output directories
+dist/
+build/
+
+# TypeScript configuration files
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency directories
+jspm_packages/
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Optional npm cache directory
+.npm/
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Optional REPL history
+.node_repl_history
+
+# MacOS files
+.DS_Store
+
+# Vim swap files
+*.swp
+
+# VSCode settings
+.vscode/
+
+# IntelliJ IDEA settings
+.idea/
+
+# TypeScript output
+*.js
+*.d.ts
+*.js.map
+
+# Environment variables
+.env
+
+# Temporary files
+temp/
+tmp/
+*.tmp
