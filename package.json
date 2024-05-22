@@ -1,23 +1,26 @@
 {
   "name": "json24",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "FuzzyJSONParser is a robust JSON parser designed to handle and recover data from JSON strings with extraneous text and incomplete structures. It can parse JSON strings that include redundant pre/post content and recover from missing closing characters like \", ], and }. Might be specifically useful for parsing LLM API responses (ChatGPT, LLAMA, Claude, etc...)",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc"
   },
   "type": "module",
   "keywords": [
     "json",
     "parser",
     "fuzzy",
+    "missing",
     "incomplete",
     "recovery",
     "LLM",
-    "openAI",
-    "chatGPT",
-    "llama"
+    "OpenAI",
+    "ChatGPT",
+    "LLAMA"
   ],
+  "types": "dist/index.d.ts",
   "author": "yeargun",
   "repository": {
     "type": "git",
@@ -28,7 +31,7 @@
   "bugs": {
     "url": "https://github.com/yeargun/json24/issues"
   },
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node": "^20.12.12",

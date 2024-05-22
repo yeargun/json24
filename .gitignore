@@ -2,8 +2,8 @@
 node_modules/
 
 # Output directories
-dist/
-build/
+# dist/
+# build/
 
 # TypeScript configuration files
 *.tsbuildinfo

@@ -157,6 +157,7 @@ describe('parsePartialJson tests', () => {
     test('pre and post text not related to the json output', () => {
         const jsonString = 'unemployment day 10. its very hard to live a life without money ive lost 10pounds already. {"items": [1, "two", true, null, {"name": "John"}, ["inner", "array"], "undefined"]}  unemployment day 10. its very hard to live a life without money Ive lost 10pounds already';
         const parsedJson = json24.parse(jsonString, [], { hasExplicitUndefined: true });
+
         expect(parsedJson).toEqual({
             items: [1, 'two', true, null, { name: 'John' }, ['inner', 'array'], "undefined"]
         });

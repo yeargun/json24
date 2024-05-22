@@ -3,6 +3,12 @@ interface ParseOptions {
   hasExplicitUndefined?: boolean;
 }
 
+
+/**
+ * A robust JSON parser designed to handle and recover data from JSON strings
+ * with extraneous text and incomplete structures. Ideal for parsing JSON strings that include
+ * redundant pre/post content or are missing closing characters like \", ], and }.
+ */
 export class FuzzyJsonParser {
   private index: number;
   private str: string;
@@ -17,12 +23,19 @@ export class FuzzyJsonParser {
     this.hasExplicitUndefined = hasExplicitUndefined;
   }
 
+  /**
+  * Parses a JSON string while handling extraneous and incomplete structures.
+  * @param {string} jsonStr - The JSON string to parse.
+  * @param {string[]} requiredKeys - An optional array of keys that must be present in the JSON string.
+  * @param {ParseOptions} [options] - Optional settings to override the default parser options.
+  * @returns {any} The parsed JSON object or `null` if parsing fails.
+  */
   parse(jsonStr: string, requiredKeys?: string[], options?: ParseOptions): any {
     try {
       return JSON.parse(jsonStr);
     } catch (error) {
       console.log('Classic JSON parse error', jsonStr.slice(0, this.index + 38) + '...');
-      
+
       this.currParseSettings = {
         appendStrOnEnd: this.appendStrOnEnd,
         hasExplicitUndefined: this.hasExplicitUndefined,
@@ -44,9 +57,9 @@ export class FuzzyJsonParser {
       if (char === '{' || char === '[') {
         if (jsonStart === -1)
           jsonStart = i;
-        
+
         stack.push(char);
-      } 
+      }
       else if ((char === '}' && stack[stack.length - 1] === '{') || (char === ']' && stack[stack.length - 1] === '[')) {
         stack.pop();
         if (stack.length === 0) {

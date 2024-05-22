@@ -39,7 +39,7 @@ Parses a JSON string while handling extraneous and incomplete structures.
 
 **Parameters:**
 - `jsonStr` (string): The JSON string to parse.
-- `requiredKeys` (string[]): Optional array of keys that must be present in the JSON string for it to be considered valid. Is helpful when you think there might be multiple JSON-like strings might be present in the string.
+- `requiredKeys` (string[]): Optional array of keys that must be present in the JSON string for it to be considered valid. Is helpful when you think there might be multiple JSON-like strings present in the string.
 - `options` (ParseOptions): Optional settings to override the default parser options.
 
 **Returns:** `any` - The parsed JSON object or `null` if parsing fails.
@@ -47,16 +47,14 @@ Parses a JSON string while handling extraneous and incomplete structures.
 ## Contributing
 
 
-
-FuzzyJSONParser is still in its early stages and not completely tested. While some test cases are included, there's plenty of room for more comprehensive testing and improvement. Any contribution is welcomed:
+FuzzyJSONParser is still in its early stages and not completely tested. While some test cases are included, there's plenty of room for more comprehensive testing and improvement:
 
 - **Feedback:** If you encounter any issues or have suggestions for improvements, please open an issue on GitHub.
 - **Testing:** Help us expand the test coverage by writing and submitting new test cases.
 - **Bug Fixes:** If you find and fix bugs, please submit a pull request.
 - **Features:** If you have ideas for new features or enhancements, feel free to discuss them in an issue or submit a pull request.
 
-
-We appreciate your feedback and contributions!
+Any contribution is welcomed!
 
 ## License
 This project is licensed under the MIT License.
