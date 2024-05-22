@@ -1,7 +1,7 @@
 {
   "name": "json24",
-  "version": "0.0.1",
-  "description": "Fuzzy parse, weird json strings.",
+  "version": "0.0.2",
+  "description": "FuzzyJSONParser is a robust JSON parser designed to handle and recover data from JSON strings with extraneous text and incomplete structures. It can parse JSON strings that include redundant pre/post content and recover from missing closing characters like \", ], and }. Might be specifically useful for parsing LLM API responses (ChatGPT, LLAMA, Claude, etc...)",
   "main": "index.js",
   "scripts": {
     "test": "jest"

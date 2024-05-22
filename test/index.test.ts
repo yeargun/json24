@@ -1,4 +1,4 @@
-import { FuzzyJsonParser } from "../src/test2";
+import { FuzzyJsonParser } from "../src";
 
 const json24 = new FuzzyJsonParser({ hasExplicitUndefined: true });
 
@@ -135,5 +135,30 @@ describe('parsePartialJson tests', () => {
         const jsonString = '[{}, {}';
         const parsedJson = json24.parse(jsonString);
         expect(parsedJson).toEqual([{}, {}]);
+    });
+
+
+    test('pre text not related to the json output', () => {
+        const jsonString = 'unemployment day 10. its very hard to live a life without money Ive lost 10pounds already. god help me {"items": [1, "two", true, null, {"name": "John"}, ["inner", "array"], "undefined"]}';
+        const parsedJson = json24.parse(jsonString, [], { hasExplicitUndefined: true });
+        expect(parsedJson).toEqual({
+            items: [1, 'two', true, null, { name: 'John' }, ['inner', 'array'], "undefined"]
+        });
+    });
+
+    test('post text not related to the json output', () => {
+        const jsonString = ' {"items": [1, "two", true, null, {"name": "John"}, ["inner", "array"], "undefined"]}  unemployment day 10. its very hard to live a life without money Ive lost 10pounds already';
+        const parsedJson = json24.parse(jsonString, [], { hasExplicitUndefined: true });
+        expect(parsedJson).toEqual({
+            items: [1, 'two', true, null, { name: 'John' }, ['inner', 'array'], "undefined"]
+        });
+    });
+
+    test('pre and post text not related to the json output', () => {
+        const jsonString = 'unemployment day 10. its very hard to live a life without money ive lost 10pounds already. {"items": [1, "two", true, null, {"name": "John"}, ["inner", "array"], "undefined"]}  unemployment day 10. its very hard to live a life without money Ive lost 10pounds already';
+        const parsedJson = json24.parse(jsonString, [], { hasExplicitUndefined: true });
+        expect(parsedJson).toEqual({
+            items: [1, 'two', true, null, { name: 'John' }, ['inner', 'array'], "undefined"]
+        });
     });
 });

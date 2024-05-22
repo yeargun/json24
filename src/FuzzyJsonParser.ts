@@ -6,9 +6,9 @@ interface ParseOptions {
 export class FuzzyJsonParser {
   private index: number;
   private str: string;
-  private hasExplicitUndefined: boolean;
+  private hasExplicitUndefined: boolean
   private appendStrOnEnd: string;
-  private currParseSettings: ParseOptions;
+  private currParseSettings: ParseOptions | undefined;
 
   constructor({ appendStrOnEnd = '...', hasExplicitUndefined = false }: ParseOptions = {}) {
     this.index = 0;
@@ -17,230 +17,187 @@ export class FuzzyJsonParser {
     this.hasExplicitUndefined = hasExplicitUndefined;
   }
 
-  parse(jsonStr: string, options?: ParseOptions): any {
+  parse(jsonStr: string, requiredKeys?: string[], options?: ParseOptions): any {
     try {
-      return JSON.parse(jsonStr)
+      return JSON.parse(jsonStr);
     } catch (error) {
-      console.log('classic JSON parse error', jsonStr?.substring(this.index, this.index + 8) + '...')
+      console.log('Classic JSON parse error', jsonStr.slice(0, this.index + 38) + '...');
+      
       this.currParseSettings = {
         appendStrOnEnd: this.appendStrOnEnd,
         hasExplicitUndefined: this.hasExplicitUndefined,
         ...options,
-      }
-      const jsonLikeSegments = this.extractJsonLikeSegments(jsonStr);
-      console.log('jsonLikeSegments', jsonLikeSegments);
-      return this.findAndParseValidJsonSegment(jsonLikeSegments,);
+      };
+      const jsonSegments = this.extractJsonLikeSegments(jsonStr);
+      return this.findAndParseValidJsonSegment(jsonSegments, requiredKeys);
     }
   }
 
-  parseBase(jsonStr: string, options?: ParseOptions): any {
-    try {
-      return JSON.parse(jsonStr)
-    } catch (error) {
-      this.currParseSettings = {
-        appendStrOnEnd: this.appendStrOnEnd,
-        hasExplicitUndefined: this.hasExplicitUndefined,
-        ...options,
-      }
-      this.index = 0;
-      this.str = jsonStr;
-      try {
-        return this.parseValue();
-      } catch (error) {
-        console.error("Error parsing JSON:", error);
-        return null;
-      }
-    }
-  }
-  
 
   private extractJsonLikeSegments(input: string): string[] {
     const segments: string[] = [];
-    let jsonStart = -1;
     const stack: string[] = [];
-    let i = 0;
+    let jsonStart = -1;
 
-    while (i < input.length) {
+    for (let i = 0; i < input.length; i++) {
       const char = input[i];
-
       if (char === '{' || char === '[') {
-        if (jsonStart === -1) {
+        if (jsonStart === -1)
           jsonStart = i;
-        }
+        
         stack.push(char);
       } 
-      else if (
-        (char === '}' && stack[stack.length - 1] === '{') ||
-        (char === ']' && stack[stack.length - 1] === '[')
-      ) {
+      else if ((char === '}' && stack[stack.length - 1] === '{') || (char === ']' && stack[stack.length - 1] === '[')) {
         stack.pop();
         if (stack.length === 0) {
-          const jsonEnd = i + 1;
-          segments.push(input.substring(jsonStart, jsonEnd));
+          segments.push(input.substring(jsonStart, i + 1));
           jsonStart = -1;
         }
       }
-      i++;
+      // Push incomplete  segment
+      if (i === input.length - 1 && jsonStart !== -1) {
+        segments.push(input.substring(jsonStart, i + 1));
+      }
     }
     return segments;
   }
 
-  private findAndParseValidJsonSegment(segments: string[], requiredKeys?: string[], parseOptions?: ParseOptions): string | null {
+
+
+  private findAndParseValidJsonSegment(segments: string[], requiredKeys?: string[]): any {
     for (let segment of segments) {
-      const obj = this.parseBase(segment, parseOptions);
-      if (this.containsRequiredKeys(obj, requiredKeys)) {
-        return segment;
-      }
+      const obj = this.parseBase(segment);
+      if (obj && this.containsRequiredKeys(obj, requiredKeys))
+        return obj;
     }
     return null;
   }
 
+
+
   private containsRequiredKeys(obj: any, requiredKeys?: string[]): boolean {
-    if(requiredKeys === undefined) return true;
+    if (!requiredKeys || requiredKeys?.length === 0) return true;
     if (typeof obj !== 'object' || obj === null) return false;
-    for (let key of requiredKeys) {
-      if (!(key in obj)) {
-        return false;
-      }
+    return requiredKeys.every(key => key in obj);
+  }
+
+  private parseBase(jsonStr: string): any {
+    try {
+      return JSON.parse(jsonStr);
+    } catch (error) {
+      this.resetParser(jsonStr);
+      return this.parseInternal();
     }
-    return true;
+  }
+
+  private resetParser(jsonStr: string): void {
+    this.index = 0;
+    this.str = jsonStr;
+  }
+
+  private parseInternal(): any {
+    try {
+      return this.parseValue();
+    } catch (error) {
+      console.error("Error parsing JSON:", error);
+      return null;
+    }
   }
 
 
 
   private parseValue(): any {
     this.skipWhitespace();
-
     const char = this.str[this.index];
-
-    if (char === "{") return this.parseObject();
-
-    if (char === "[") return this.parseArray();
-
+    if (char === '{') return this.parseObject();
+    if (char === '[') return this.parseArray();
     if (char === '"') return this.parseString();
-
-    if (char === "-" || this.isDigit(char)) return this.parseNumber();
-
-    if (char === "t" || char === "f") return this.parseBoolean();
-
-    if (char === "n") return this.parseNull();
-
-    if (char === "u") return this.parseUndefined();
-
-    // throw new Error(`Unexpected char: ${char}`);
+    if (char === '-' || this.isDigit(char)) return this.parseNumber();
+    if (char === 't' || char === 'f') return this.parseBoolean();
+    if (char === 'n') return this.parseNull();
+    if (char === 'u') return this.parseUndefined();
+    //   throw new Error(`Unexpected char: ${char}`);
   }
 
   private parseObject(): Record<string, any> | null {
     this.index++;
-
     const obj: Record<string, any> = {};
-
     while (this.index < this.str.length) {
       this.skipWhitespace();
-
-      if (this.str[this.index] === "}") {
+      if (this.str[this.index] === '}') {
         this.index++;
-
         return obj;
       }
-
       const key = this.parseString();
-
       this.skipWhitespace();
 
-      if (this.str[this.index] !== ":") {
-        throw new Error('Expected ":" after key in object');
-      }
-
+      // if (this.str[this.index] !== ':') {
+      //   throw new Error('Expected ":" after key in object');
+      // }
       this.index++;
-
       this.skipWhitespace();
-
       const value = this.parseValue();
-      // console.log('value this', value)
-
-      if (value === undefined) {
-        if (this?.currParseSettings?.hasExplicitUndefined)
-          obj[key] = value;
-      }
-      else
-        obj[key] = value;
-
+      if (value === undefined && !this.currParseSettings?.hasExplicitUndefined)
+        continue;
+      obj[key] = value;
       this.skipWhitespace();
-
-      if (this.str[this.index] === ",")
+      if (this.str[this.index] === ',')
         this.index++;
-      else if (this.str[this.index] === "}") {
+      else if (this.str[this.index] === '}') {
         this.index++;
         return obj;
       }
       else if (this.index >= this.str.length)
         return obj;
     }
-
     return obj;
   }
 
   private parseArray(): any[] | null {
-    this.index++; // skip '['
-
+    this.index++;
     const arr: any[] = [];
-
     while (this.index < this.str.length) {
       this.skipWhitespace();
-
-      if (this.str[this.index] === "]") {
+      if (this.str[this.index] === ']') {
         this.index++;
-
         return arr;
       }
-
-      const value = this.parseValue();
-
-      arr.push(value);
-
+      arr.push(this.parseValue());
       this.skipWhitespace();
-
-      if (this.str[this.index] === ",") {
+      if (this.str[this.index] === ',')
         this.index++;
-      } else if (this.str[this.index] === "]") {
+      else if (this.str[this.index] === ']') {
         this.index++;
-
-        return arr;
-      } else if (this.index >= this.str.length) {
         return arr;
       }
+      else if (this.index >= this.str.length)
+        return arr;
     }
-
     return arr;
   }
 
   private parseString(): string {
-    let result = "";
-
+    let result = '';
     this.index++;
 
     while (this.index < this.str.length) {
       if (this.str[this.index] === '"') {
         this.index++;
-
         return result;
       }
 
-      if (this.str[this.index] === "\\") {
+      if (this.str[this.index] === '\\') {
         this.index++;
-
         const escapeChars: { [key: string]: string } = {
           '"': '"',
-          "\\": "\\",
-          "/": "/",
-          b: "\b",
-          f: "\f",
-          n: "\n",
-          r: "\r",
-          t: "\t",
+          '\\': '\\',
+          '/': '/',
+          b: '\b',
+          f: '\f',
+          n: '\n',
+          r: '\r',
+          t: '\t'
         };
-
         result += escapeChars[this.str[this.index]] || this.str[this.index];
       }
       else
@@ -248,65 +205,53 @@ export class FuzzyJsonParser {
 
       this.index++;
     }
-
-    return result + this?.currParseSettings?.appendStrOnEnd || this.appendStrOnEnd; //unclosed string
-    // throw new Error("Unexpected end of string");
+    return result + (this.currParseSettings?.appendStrOnEnd || this.appendStrOnEnd); // unclosed string
   }
+
 
   private parseNumber(): number | null {
     const start = this.index;
-
-    if (this.str[this.index] === "-") this.index++;
-
+    if (this.str[this.index] === '-') this.index++;
     while (this.isDigit(this.str[this.index])) this.index++;
-
-    if (this.str[this.index] === ".") {
+    if (this.str[this.index] === '.') {
       this.index++;
-
       while (this.isDigit(this.str[this.index])) this.index++;
     }
 
-    if (this.str[this.index] === "e" || this.str[this.index] === "E") {
+    if (this.str[this.index] === 'e' || this.str[this.index] === 'E') {
       this.index++;
-
-      if (this.str[this.index] === "-" || this.str[this.index] === "+")
-        this.index++;
-
+      if (this.str[this.index] === '-' || this.str[this.index] === '+') this.index++;
       while (this.isDigit(this.str[this.index])) this.index++;
     }
-
     return Number(this.str.slice(start, this.index));
   }
 
   private parseBoolean(): boolean | null {
-    if (this.str.startsWith("true", this.index)) {
+    if (this.str.startsWith('true', this.index)) {
       this.index += 4;
-
       return true;
-    } else if (this.str.startsWith("false", this.index)) {
+    }
+    else if (this.str.startsWith('false', this.index)) {
       this.index += 5;
-
       return false;
     }
-
-    throw new Error("Unexpected token in JSON");
+    throw new Error('Unexpected token in JSON');
   }
 
   private parseNull(): null | never {
-    if (this.str.startsWith("null", this.index)) {
+    if (this.str.startsWith('null', this.index)) {
       this.index += 4;
       return null;
     }
-    throw new Error("Unexpected token in JSON");
+    throw new Error('Unexpected token in JSON');
   }
 
   private parseUndefined(): undefined | never {
-    if (this.str.startsWith("undefined", this.index)) {
+    if (this.str.startsWith('undefined', this.index)) {
       this.index += 9;
       return undefined;
     }
-
-    throw new Error("Unexpected token in JSON");
+    throw new Error('Unexpected token in JSON');
   }
 
   private skipWhitespace(): void {
@@ -315,8 +260,9 @@ export class FuzzyJsonParser {
     }
   }
 
+
   private isDigit(char: string): boolean {
-    return char >= "0" && char <= "9";
+    return char >= '0' && char <= '9';
   }
 }
 
