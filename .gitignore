@@ -39,7 +39,7 @@ coverage/
 # Vim swap files
 *.swp
 
-# VSCode settings
+# IDE settings
 .vscode/
 
 # IntelliJ IDEA settings

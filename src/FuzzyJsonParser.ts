@@ -1,25 +1,112 @@
-export class JSONParser {
+interface ParseOptions {
+  appendStrOnEnd?: string;
+  hasExplicitUndefined?: boolean;
+}
+
+export class FuzzyJsonParser {
   private index: number;
-
   private str: string;
+  private hasExplicitUndefined: boolean;
+  private appendStrOnEnd: string;
+  private currParseSettings: ParseOptions;
 
-  constructor() {
+  constructor({ appendStrOnEnd = '...', hasExplicitUndefined = false }: ParseOptions = {}) {
     this.index = 0;
     this.str = "";
+    this.appendStrOnEnd = appendStrOnEnd;
+    this.hasExplicitUndefined = hasExplicitUndefined;
   }
 
-  parse(jsonStr: string): any {
-    this.index = 0;
-
-    this.str = jsonStr;
-
+  parse(jsonStr: string, options?: ParseOptions): any {
     try {
-      return this.parseValue();
+      return JSON.parse(jsonStr)
     } catch (error) {
-      console.error("Error parsing JSON:", error);
-      return null;
+      console.log('classic JSON parse error', jsonStr?.substring(this.index, this.index + 8) + '...')
+      this.currParseSettings = {
+        appendStrOnEnd: this.appendStrOnEnd,
+        hasExplicitUndefined: this.hasExplicitUndefined,
+        ...options,
+      }
+      const jsonLikeSegments = this.extractJsonLikeSegments(jsonStr);
+      console.log('jsonLikeSegments', jsonLikeSegments);
+      return this.findAndParseValidJsonSegment(jsonLikeSegments,);
     }
   }
+
+  parseBase(jsonStr: string, options?: ParseOptions): any {
+    try {
+      return JSON.parse(jsonStr)
+    } catch (error) {
+      this.currParseSettings = {
+        appendStrOnEnd: this.appendStrOnEnd,
+        hasExplicitUndefined: this.hasExplicitUndefined,
+        ...options,
+      }
+      this.index = 0;
+      this.str = jsonStr;
+      try {
+        return this.parseValue();
+      } catch (error) {
+        console.error("Error parsing JSON:", error);
+        return null;
+      }
+    }
+  }
+  
+
+  private extractJsonLikeSegments(input: string): string[] {
+    const segments: string[] = [];
+    let jsonStart = -1;
+    const stack: string[] = [];
+    let i = 0;
+
+    while (i < input.length) {
+      const char = input[i];
+
+      if (char === '{' || char === '[') {
+        if (jsonStart === -1) {
+          jsonStart = i;
+        }
+        stack.push(char);
+      } 
+      else if (
+        (char === '}' && stack[stack.length - 1] === '{') ||
+        (char === ']' && stack[stack.length - 1] === '[')
+      ) {
+        stack.pop();
+        if (stack.length === 0) {
+          const jsonEnd = i + 1;
+          segments.push(input.substring(jsonStart, jsonEnd));
+          jsonStart = -1;
+        }
+      }
+      i++;
+    }
+    return segments;
+  }
+
+  private findAndParseValidJsonSegment(segments: string[], requiredKeys?: string[], parseOptions?: ParseOptions): string | null {
+    for (let segment of segments) {
+      const obj = this.parseBase(segment, parseOptions);
+      if (this.containsRequiredKeys(obj, requiredKeys)) {
+        return segment;
+      }
+    }
+    return null;
+  }
+
+  private containsRequiredKeys(obj: any, requiredKeys?: string[]): boolean {
+    if(requiredKeys === undefined) return true;
+    if (typeof obj !== 'object' || obj === null) return false;
+    for (let key of requiredKeys) {
+      if (!(key in obj)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+
 
   private parseValue(): any {
     this.skipWhitespace();
@@ -37,6 +124,8 @@ export class JSONParser {
     if (char === "t" || char === "f") return this.parseBoolean();
 
     if (char === "n") return this.parseNull();
+
+    if (char === "u") return this.parseUndefined();
 
     // throw new Error(`Unexpected char: ${char}`);
   }
@@ -68,9 +157,14 @@ export class JSONParser {
       this.skipWhitespace();
 
       const value = this.parseValue();
-      console.log('value this', value)
+      // console.log('value this', value)
 
-      obj[key] = value;
+      if (value === undefined) {
+        if (this?.currParseSettings?.hasExplicitUndefined)
+          obj[key] = value;
+      }
+      else
+        obj[key] = value;
 
       this.skipWhitespace();
 
@@ -79,8 +173,8 @@ export class JSONParser {
       else if (this.str[this.index] === "}") {
         this.index++;
         return obj;
-      } 
-      else if (this.index >= this.str.length) 
+      }
+      else if (this.index >= this.str.length)
         return obj;
     }
 
@@ -108,7 +202,7 @@ export class JSONParser {
       this.skipWhitespace();
 
       if (this.str[this.index] === ",") {
-        this.index++; 
+        this.index++;
       } else if (this.str[this.index] === "]") {
         this.index++;
 
@@ -121,7 +215,7 @@ export class JSONParser {
     return arr;
   }
 
-  private parseString(): string | null {
+  private parseString(): string {
     let result = "";
 
     this.index++;
@@ -148,16 +242,14 @@ export class JSONParser {
         };
 
         result += escapeChars[this.str[this.index]] || this.str[this.index];
-      } 
+      }
       else
         result += this.str[this.index];
 
       this.index++;
     }
 
-    console.log('unclosed string');
-    return result + '...';
-
+    return result + this?.currParseSettings?.appendStrOnEnd || this.appendStrOnEnd; //unclosed string
     // throw new Error("Unexpected end of string");
   }
 
@@ -205,6 +297,14 @@ export class JSONParser {
       this.index += 4;
       return null;
     }
+    throw new Error("Unexpected token in JSON");
+  }
+
+  private parseUndefined(): undefined | never {
+    if (this.str.startsWith("undefined", this.index)) {
+      this.index += 9;
+      return undefined;
+    }
 
     throw new Error("Unexpected token in JSON");
   }
@@ -219,3 +319,6 @@ export class JSONParser {
     return char >= "0" && char <= "9";
   }
 }
+
+
+export { type ParseOptions }
