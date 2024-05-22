@@ -41,8 +41,6 @@ coverage/
 
 # IDE settings
 .vscode/
-
-# IntelliJ IDEA settings
 .idea/
 
 # TypeScript output

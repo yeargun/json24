@@ -7,8 +7,27 @@
     "test": "jest"
   },
   "type": "module",
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "json",
+    "parser",
+    "fuzzy",
+    "incomplete",
+    "recovery",
+    "LLM",
+    "openAI",
+    "chatGPT",
+    "llama"
+  ],
+  "author": "yeargun",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yeargun/json24.git"
+
+  },
+  "homepage": "https://github.com/yeargun/json24#readme",
+  "bugs": {
+    "url": "https://github.com/yeargun/json24/issues"
+  },
   "license": "ISC",
   "devDependencies": {
     "@types/jest": "^29.5.12",
